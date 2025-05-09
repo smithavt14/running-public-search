@@ -38,9 +38,10 @@ import { resources } from '../src/lib/db/schema/resources.js';
 import { embeddings } from '../src/lib/db/schema/embeddings.js';
 import { 
   extractEpisodeInfo, 
-  groupTranscriptsByEpisode, 
-  createOverlappingChunks 
+  groupTranscriptsByEpisode 
 } from '../src/lib/ai/transcripts.js';
+import { createSemanticChunks } from '../src/lib/ai/semantic-chunker.js';
+import { CHUNK_SIZE, OVERLAP_SIZE, EMBEDDING_MODEL } from '../src/lib/ai/config.js';
 
 // Initialize OpenAI client for regular API calls
 const openaiClient = new OpenAI({
@@ -48,7 +49,7 @@ const openaiClient = new OpenAI({
 });
 
 // Initialize embedding model for AI SDK
-const embeddingModel = openai.embedding('text-embedding-3-small');
+const embeddingModel = openai.embedding(EMBEDDING_MODEL);
 
 // Types
 interface TranscriptFile {
@@ -62,10 +63,6 @@ interface ProcessedChunk {
   episodeNumber: string;
   tokens: number;
 }
-
-// Constants
-const CHUNK_SIZE = 1000; // Size of each chunk in tokens
-const OVERLAP_SIZE = 200; // Size of overlap between chunks in tokens
 
 // Main function
 async function main() {
@@ -167,9 +164,9 @@ async function processTranscripts() {
     
     console.log(`Resource created with ID: ${resourceResult.id}`);
     
-    // Create overlapping chunks from the episode content
-    const chunks = createOverlappingChunks(episode.content, CHUNK_SIZE, OVERLAP_SIZE);
-    console.log(`Created ${chunks.length} overlapping chunks for episode ${episodeId}`);
+    // Create semantic chunks from the episode content using LangChain
+    const chunks = await createSemanticChunks(episode.content, CHUNK_SIZE, OVERLAP_SIZE);
+    console.log(`Created ${chunks.length} semantic chunks for episode ${episodeId}`);
     
     try {
       console.log(`Generating embeddings for ${chunks.length} chunks...`);

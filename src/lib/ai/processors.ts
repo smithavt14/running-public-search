@@ -10,11 +10,11 @@ import { resources } from '../db/schema/resources.js';
 import { embeddings as embeddingsTable } from '../db/schema/embeddings.js';
 import { 
   groupTranscriptsByEpisode, 
-  createOverlappingChunks,
-  parseAudioTranscript,
   EpisodeInfo
 } from './utils.js';
+import { createSemanticChunks } from './semantic-chunker.js';
 import { encode } from 'gpt-tokenizer';
+import { CHUNK_SIZE, OVERLAP_SIZE } from './config.js';
 
 // Convert callback-based functions to Promise-based
 const exec = promisify(execCallback);
@@ -31,8 +31,6 @@ const TRANSCRIPTS_DIR = join(process.cwd(), 'data', 'transcripts');
 const MAX_SIZE_MB = 20;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 const MAX_DURATION_SECONDS = 1450; // Maximum duration in seconds (staying under the 1500s limit)
-const CHUNK_SIZE = 1000; // Size of each text chunk in tokens
-const OVERLAP_SIZE = 200; // Size of overlap between chunks in tokens
 
 /**
  * Get the embedding model
@@ -424,9 +422,9 @@ export async function generateEmbeddingsForTranscripts(): Promise<void> {
     
     console.log(`Resource created with ID: ${resourceResult.id}`);
     
-    // Create overlapping chunks from the episode content
-    const chunks = createOverlappingChunks(episodeContent, CHUNK_SIZE, OVERLAP_SIZE);
-    console.log(`Created ${chunks.length} overlapping chunks for episode ${episodeId}`);
+    // Create semantic chunks from the episode content using LangChain
+    const chunks = await createSemanticChunks(episodeContent, CHUNK_SIZE, OVERLAP_SIZE);
+    console.log(`Created ${chunks.length} semantic chunks for episode ${episodeId}`);
     
     try {
       console.log(`Generating embeddings for ${chunks.length} chunks...`);

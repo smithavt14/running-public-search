@@ -1,5 +1,6 @@
 import { encode } from 'gpt-tokenizer';
 import { basename } from 'path';
+import { CHUNK_SIZE, OVERLAP_SIZE } from './config.js';
 
 // Types
 export interface TranscriptFile {
@@ -105,8 +106,8 @@ export function groupTranscriptsByEpisode(transcriptFiles: Array<{ text: string,
  */
 export function createOverlappingChunks(
   text: string, 
-  chunkSize: number = 1000, 
-  overlapSize: number = 200
+  chunkSize: number = CHUNK_SIZE, 
+  overlapSize: number = OVERLAP_SIZE
 ): string[] {
   // If using GPT tokenizer, we need to split by sentences first to better preserve meaning
   const sentences = text.split(/(?<=[.!?])\s+/);

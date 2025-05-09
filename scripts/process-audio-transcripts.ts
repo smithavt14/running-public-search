@@ -4,7 +4,7 @@ import { dirname, join, basename, extname } from 'path';
 import fs from 'fs';
 import { promisify } from 'util';
 import { exec as execCallback } from 'child_process';
-import { OpenAI } from 'openai';
+import { transcribeAudio } from '../src/lib/ai/transcripts.js';
 
 // Load environment variables from .env.local
 const __filename = fileURLToPath(import.meta.url);
@@ -16,11 +16,6 @@ const exec = promisify(execCallback);
 const mkdir = promisify(fs.mkdir);
 const readdir = promisify(fs.readdir);
 const stat = promisify(fs.stat);
-
-// Create OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 // Constants
 const AUDIO_FILES_DIR = join(process.cwd(), 'data', 'audio_files');
@@ -135,49 +130,6 @@ async function splitAudioFile(filePath: string): Promise<string[]> {
   return chunkPaths;
 }
 
-// Transcribe audio file using OpenAI API
-async function transcribeAudio(audioFilePath: string): Promise<string> {
-  try {
-    console.log(`Transcribing ${basename(audioFilePath)}...`);
-    
-    // Create a read stream of the audio file
-    const audioFile = fs.createReadStream(audioFilePath);
-    
-    // Call OpenAI API for transcription
-    try {
-      const response = await openai.audio.transcriptions.create({
-        file: audioFile,
-        model: "gpt-4o-mini-transcribe", // This will use the GPT4o Mini Transcribe model
-        response_format: "json",
-        temperature: 0.2,
-      });
-      
-      console.log(`Transcription completed for ${basename(audioFilePath)}`);
-      return JSON.stringify(response, null, 2);
-    } catch (apiError: any) {
-      // If the model isn't available or there's an issue with the new model, fall back to whisper
-      console.warn(`Error with gpt-4o-mini-transcribe: ${apiError.message || String(apiError)}`);
-      console.warn('Falling back to whisper-1 model...');
-      
-      // Reset the stream since it might have been consumed
-      const fallbackAudioFile = fs.createReadStream(audioFilePath);
-      
-      const fallbackResponse = await openai.audio.transcriptions.create({
-        file: fallbackAudioFile,
-        model: "whisper-1", // Fallback to the whisper model
-        response_format: "json",
-        temperature: 0.2,
-      });
-      
-      console.log(`Fallback transcription completed for ${basename(audioFilePath)}`);
-      return JSON.stringify(fallbackResponse, null, 2);
-    }
-  } catch (error) {
-    console.error(`Error transcribing ${basename(audioFilePath)}:`, error);
-    throw error;
-  }
-}
-
 // Save transcript to file
 async function saveTranscript(audioFilePath: string, transcript: string): Promise<string> {
   const fileName = basename(audioFilePath, extname(audioFilePath));
@@ -226,7 +178,10 @@ async function processAudioFiles() {
       
       // Step 2: Transcribe each chunk
       for (const chunkPath of chunks) {
-        const transcript = await transcribeAudio(chunkPath);
+        const transcript = await transcribeAudio(chunkPath, {
+          temperature: 0.2,
+          responseFormat: 'json'
+        });
         await saveTranscript(chunkPath, transcript);
       }
       

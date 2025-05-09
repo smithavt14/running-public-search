@@ -8,17 +8,30 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "process-transcripts": "node --loader ts-node/esm scripts/process-transcripts.ts",
-    "process-audio": "node --loader ts-node/esm scripts/process-audio-transcripts.ts"
+    "process-youtube-transcripts": "node --loader ts-node/esm scripts/process-youtube-transcripts.ts",
+    "process-audio-transcripts": "node --loader ts-node/esm scripts/process-audio-transcripts.ts",
+    "process-embeddings": "node --loader ts-node/esm scripts/process-embeddings.ts",
+    "process-podcast": "node --loader ts-node/esm scripts/process-podcast.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/lib/db/migrate.ts",
+    "drizzle:generate": "pnpm dlx drizzle-kit generate",
+    "drizzle:push": "pnpm dlx drizzle-kit push",
+    "drizzle:migrate": "pnpm dlx drizzle-kit migrate"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^1.3.21",
+    "@ai-sdk/react": "^1.2.12",
     "@supabase/supabase-js": "^2.39.0",
+    "ai": "^4.3.14",
+    "drizzle-orm": "^0.43.1",
     "geist": "^1.4.2",
     "gpt-tokenizer": "^2.1.2",
     "next": "14.0.4",
     "openai": "^4.20.0",
+    "postgres": "^3.4.5",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -27,11 +40,13 @@
     "autoprefixer": "^10.4.21",
     "daisyui": "^5.0.35",
     "dotenv": "^16.5.0",
+    "drizzle-kit": "^0.31.1",
     "eslint": "^8",
     "eslint-config-next": "14.0.4",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.1",
+    "tsx": "^4.19.4",
     "typescript": "^5"
   }
 }

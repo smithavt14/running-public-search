@@ -1,0 +1,71 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project Structure
+
+## Overview
+Running Public Next is a Next.js application that creates a searchable AI-powered chatbot for The Running Public podcast. The application allows users to ask questions about running and training, and receive answers based on content from podcast episodes.
+
+## Tech Stack
+- **Frontend**: Next.js 14.0, React 18, TailwindCSS, DaisyUI
+- **AI & ML**: OpenAI API (GPT-4o, text-embedding-3-small)
+- **Database**: Supabase with pgvector for vector embeddings, Drizzle ORM
+- **Languages**: TypeScript
+
+## Directory Structure
+- `/src` - Main application code
+  - `/app` - Next.js App Router structure
+    - `page.tsx` - Main chat interface with resource creation
+    - `/api/chat` - API route for handling chat interactions with OpenAI
+    - `layout.tsx` - Root layout component
+  - `/lib` - Core libraries and utilities
+    - `/db` - Database related code
+      - `/schema` - Drizzle ORM schema definitions
+        - `resources.ts` - Resources table schema
+        - `embeddings.ts` - Embeddings table schema
+      - `/migrations` - Database migration files
+      - `index.ts` - Database client and utilities
+      - `migrate.ts` - Migration runner script
+    - `/ai` - AI-related functionality
+      - `embedding.ts` - Functions for generating embeddings
+    - `/actions` - Server actions
+      - `resources.ts` - Resource management actions
+  - `/utils` - General utility functions
+    - `supabase.ts` - Supabase client initialization
+
+- `/scripts` - Data processing utilities
+  - `process-youtube-transcripts.ts` - Processes YouTube transcripts
+  - `process-audio-transcripts.ts` - Processes audio transcripts
+  - `process-embeddings.ts` - Generates and stores embeddings
+
+- `/data` - Storage for transcripts and other data files
+
+- `/public` - Static assets
+
+## Core Functionality
+1. **Chat Interface**: Uses the AI SDK's `useChat` hook to create a streaming chat experience
+2. **Vector Search**: Converts user queries into embeddings to find relevant content
+3. **Context-Aware Responses**: Provides ChatGPT with relevant context chunks as context
+4. **Resource Management**: Allows adding and retrieving knowledge resources
+5. **Data Processing Pipeline**: Scripts for processing transcripts and generating embeddings
+
+## Development Workflow
+- `pnpm dev` - Start development server
+- `pnpm build` - Build for production
+- `pnpm db:generate` - Generate migration files based on schema changes
+- `pnpm db:migrate` - Apply migrations to the database
+- `pnpm process-youtube-transcripts` - Process YouTube transcripts
+- `pnpm process-audio-transcripts` - Process audio transcripts 
+- `pnpm process-embeddings` - Generate and store embeddings
+
+## Dependencies
+- `@ai-sdk/openai` and `ai` - AI SDK for chat functionality
+- `@supabase/supabase-js` - Supabase client
+- `drizzle-orm` - Database ORM
+- `postgres` - PostgreSQL client
+- `openai` - OpenAI API client
+- `gpt-tokenizer` - Token counting for embedding chunks
+- `next`, `react`, `react-dom` - Core frameworks
+- TailwindCSS and DaisyUI for styling

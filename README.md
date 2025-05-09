@@ -1,4 +1,67 @@
-# Running Public Semantic Search Chatbot
+# Running Public AI
+
+An AI-powered chatbot for The Running Public podcast that allows users to search and chat about running content.
+
+## Project Structure
+
+The project has been restructured to more closely follow the Vercel AI SDK RAG (Retrieval Augmented Generation) pattern:
+
+- `/src/lib/db` - Database configuration and schema
+- `/src/lib/ai` - AI-related functionality (embedding generation)
+- `/src/lib/actions` - Server actions for resource management
+- `/src/app` - Next.js App Router structure
+  - `page.tsx` - Main chat interface with resource creation
+  - `/api/chat` - API route for AI chat
+
+## Setup
+
+1. Clone the repository
+2. Copy `.env.example` to `.env.local` and fill in the required environment variables:
+
+```
+DATABASE_URL="your-supabase-postgres-connection-string"
+OPENAI_API_KEY="your-openai-api-key"
+NEXT_PUBLIC_SUPABASE_URL="your-supabase-url"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-supabase-anon-key"
+```
+
+3. Install dependencies:
+
+```bash
+pnpm install
+```
+
+4. Set up the database (creates tables and extensions):
+
+```bash
+pnpm db:setup
+```
+
+5. Run the development server:
+
+```bash
+pnpm dev
+```
+
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Features
+
+- **Resource Creation**: Add knowledge to the database through the UI
+- **Embeddings Generation**: Automatically generates embeddings for added content
+- **AI Chat**: Chat interface that retrieves relevant context from the database
+
+## Development Workflow
+
+- `pnpm dev` - Start development server
+- `pnpm build` - Build for production
+- `pnpm db:generate` - Generate migration files based on schema changes
+- `pnpm db:migrate` - Apply migrations to the database
+- `pnpm process-youtube-transcripts` - Process YouTube transcripts
+- `pnpm process-audio-transcripts` - Process audio transcripts
+- `pnpm process-embeddings` - Generate and store embeddings for existing content
+
+---
 
 ## Overview
 

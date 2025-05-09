@@ -5,16 +5,16 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: theme('colors.background.light');
+  --foreground: theme('colors.foreground.light');
   --font-title: "Helvetica Neue Condensed Bold", Arial, sans-serif;
   --font-body: "Roboto", Arial, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: theme('colors.background.dark');
+    --foreground: theme('colors.foreground.dark');
   }
 }
 

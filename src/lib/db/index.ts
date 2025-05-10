@@ -1,16 +1,13 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { sql } from 'drizzle-orm';
-import * as resources from './schema/resources.js';
-import * as embeddings from './schema/embeddings.js';
+import * as resources from './schema/resources';
+import * as embeddings from './schema/embeddings';
 import * as dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import path from 'path';
 
 // Load environment variables from .env.local
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const envPath = join(__dirname, '..', '..', '..', '.env.local');
+const envPath = path.join(__dirname, '..', '..', '..', '.env.local');
 dotenv.config({ path: envPath });
 
 // Combine all schema modules

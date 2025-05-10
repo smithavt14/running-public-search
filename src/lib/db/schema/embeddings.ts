@@ -1,6 +1,6 @@
 import { customType, index, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { nanoid } from './resources.js';
-import { resources } from './resources.js';
+import { nanoid } from './resources';
+import { resources } from './resources';
 
 // Define a custom vector type for pgvector
 const pgVector = customType<{ data: number[] }>({

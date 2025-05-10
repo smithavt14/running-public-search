@@ -1,6 +1,7 @@
 import { OpenAI } from 'openai';
 import { createReadStream } from 'fs';
 import { basename } from 'path';
+import { TRANSCRIPTION_MODEL } from './config';
 
 // Types
 export interface AudioTranscriptionOptions {
@@ -37,15 +38,6 @@ export async function transcribeAudio(
     // Create a read stream of the audio file
     const audioFile = createReadStream(audioFilePath);
     
-    // Default options
-    const defaultOptions = {
-      temperature: 0.2,
-      responseFormat: 'json'
-    };
-    
-    // Merge options
-    const mergedOptions = { ...defaultOptions, ...options };
-    
     // Initialize OpenAI client
     const openai = getOpenAIClient();
     
@@ -53,12 +45,11 @@ export async function transcribeAudio(
     try {
       const response = await openai.audio.transcriptions.create({
         file: audioFile,
-        model: "gpt-4o-mini-transcribe", // This will use the GPT4o Mini Transcribe model
-        response_format: mergedOptions.responseFormat as any,
-        temperature: mergedOptions.temperature,
+        model: TRANSCRIPTION_MODEL, // This will use the GPT4o Mini Transcribe model
+        response_format: options.responseFormat as any,
+        temperature: options.temperature,
       });
       
-      console.log(`Transcription completed for ${basename(audioFilePath)}`);
       return JSON.stringify(response, null, 2);
     } catch (apiError: any) {
       // If the model isn't available or there's an issue with the new model, fall back to whisper
@@ -71,8 +62,8 @@ export async function transcribeAudio(
       const fallbackResponse = await openai.audio.transcriptions.create({
         file: fallbackAudioFile,
         model: "whisper-1", // Fallback to the whisper model
-        response_format: mergedOptions.responseFormat as any,
-        temperature: mergedOptions.temperature,
+        response_format: options.responseFormat as any,
+        temperature: options.temperature,
       });
       
       console.log(`Fallback transcription completed for ${basename(audioFilePath)}`);

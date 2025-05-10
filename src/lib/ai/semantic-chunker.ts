@@ -1,6 +1,6 @@
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { encode } from 'gpt-tokenizer';
-import { CHUNK_SIZE, OVERLAP_SIZE } from './config.js';
+import { CHUNK_SIZE, OVERLAP_SIZE } from './config';
 
 /**
  * Create semantic chunks from a complete transcript

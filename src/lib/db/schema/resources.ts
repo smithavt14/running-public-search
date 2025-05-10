@@ -10,19 +10,31 @@ export const resources = pgTable('resources', {
   id: varchar('id', { length: 191 })
     .primaryKey()
     .$defaultFn(() => nanoid()),
-  content: text('content').notNull(),
+  guid: varchar('guid', { length: 191 }).unique(),
+  title: text('title'),
+  link: text('link'),
+  pubDate: timestamp('pub_date'),
+  description: text('description'),
+  enclosureUrl: text('enclosure_url'),
+  author: text('author'),
+  duration: text('duration'),
+  episodeNumber: varchar('episode_number', { length: 20 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 export type Resource = typeof resources.$inferSelect;
-export type NewResourceParams = Pick<Resource, 'content'>;
+export type NewResourceParams = Pick<
+  Resource, 
+  'guid' | 'title' | 'link' | 'pubDate' | 'description' | 
+  'enclosureUrl' | 'author' | 'duration' | 'episodeNumber'
+>;
 
 // Schema for inserting a resource - can be used to validate API requests
 export const insertResourceSchema = {
   parse: (input: NewResourceParams) => {
-    if (!input.content || input.content.trim() === '') {
-      throw new Error('Content is required');
+    if (!input.guid || input.guid.trim() === '') {
+      throw new Error('GUID is required');
     }
     return input;
   }

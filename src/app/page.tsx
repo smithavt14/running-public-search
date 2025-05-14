@@ -5,6 +5,7 @@ import { useChat } from "@ai-sdk/react";
 import { ChatBubble } from "@/components/chat-bubble";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TextareaAutoResize } from "@/components/ui/textarea-auto-resize";
 import { Search, Heart } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useRef, useEffect, FormEvent, ChangeEvent } from "react";
@@ -49,9 +50,9 @@ export default function Home() {
   };
 
   return (
-    <main className="flex flex-col h-screen max-w-4xl w-full mx-auto py-10">
+    <main className="flex flex-col h-screen max-w-4xl w-full mx-auto pt-10">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 px-6 md:px-0">
         <div className="flex items-center gap-12">
           <Image
             src="/logo.png"
@@ -60,7 +61,7 @@ export default function Home() {
             height={64}
             priority
           />
-          <div className="flex items-center gap-6">
+          <div className="items-center gap-6 hidden md:flex">
             <Link
               href="https://therunningpublic.com/"
               target="_blank"
@@ -86,10 +87,10 @@ export default function Home() {
       {messages.length === 0 && (
         <div className="flex-1 flex flex-col items-center justify-center text-center">
           <div className="max-w-3xl w-full px-4 py-8">
-            <h2 className="text-xl font-bold mb-2">
+            <h2 className="text-xl font-bold mb-8">
               Welcome to The Running Public Podcast AI Assistant
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
+            <p className="text-muted-foreground max-w-2xl mx-auto mb-8 hidden md:block">
               Ask me anything about running advice, training techniques, gear
               recommendations, nutrition, race preparation, or specific episodes
               with Kirk DeWindt and Brakken Kraker. I can search for topics,
@@ -130,15 +131,23 @@ export default function Home() {
       </div>
 
       {/* Input Form */}
-      <div className="p-4">
+      <div className="px-4">
         <form onSubmit={handleSubmit} className="flex gap-2 max-w-4xl mx-auto">
-          <div className="relative w-full flex items-center">
-            <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="w-full pl-10 pr-20 h-14"
-              placeholder="Ask anything about the Running Public Podcast..."
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-4 h-4 w-4 text-muted-foreground z-10" />
+            <TextareaAutoResize
+              className="w-full pl-10 min-h-[48px] py-3 resize-none"
+              placeholder="Ask me anything..."
               value={input}
               onChange={handleInputChange}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e as unknown as FormEvent<HTMLFormElement>);
+                }
+              }}
+              rows={1}
+              maxHeight={200}
             />
           </div>
           <Button type="submit" className="hidden">
@@ -148,7 +157,7 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <div className="flex justify-between items-center text-sm text-muted-foreground mt-2 mb-4 px-4">
+      <div className="flex justify-center md:justify-between items-center text-sm text-muted-foreground py-6 px-4">
         <div>
           Made with <Heart className="inline h-4 w-4 text-gray-500 mx-1" /> by{" "}
           <Link
@@ -159,7 +168,7 @@ export default function Home() {
             Alex Smith
           </Link>
         </div>
-        <div>© {new Date().getFullYear()} The Running Public Search</div>
+        <div className="hidden md:block">© {new Date().getFullYear()} The Running Public Search</div>
       </div>
     </main>
   );

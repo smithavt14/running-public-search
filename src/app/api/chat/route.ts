@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { findRelevantContent } from '@/lib/ai/embedding.js';
 import { executeSafeQuery, getResourceStats } from '@/lib/ai/database-tools';
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompts/chat-system';
+import { SUMMARY_MODEL } from '@/lib/ai/config';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -12,7 +13,7 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = streamText({
-    model: openai('gpt-4o-mini'),
+    model: openai(SUMMARY_MODEL),
     system: CHAT_SYSTEM_PROMPT,
     messages,
     tools: {

@@ -1,0 +1,1 @@
+CREATE INDEX "summary_embedding_idx" ON "resources" USING ivfflat ("summary_embedding" vector_cosine_ops);

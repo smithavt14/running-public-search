@@ -22,6 +22,27 @@
       "when": 1746843728264,
       "tag": "0002_outstanding_mimic",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1747180636138,
+      "tag": "0003_violet_abomination",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1747181189552,
+      "tag": "0004_omniscient_wraith",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1747181265991,
+      "tag": "0005_swift_midnight",
+      "breakpoints": true
     }
   ]
 }

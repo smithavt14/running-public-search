@@ -2,6 +2,7 @@ import { embed, embedMany } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { db } from '../db/index.js';
 import { embeddings } from '../db/schema/embeddings.js';
+import { resources } from '../db/schema/resources.js';
 import { cosineDistance, desc, gt, sql } from 'drizzle-orm';
 
 // Initialize embedding model
@@ -80,5 +81,49 @@ export async function findRelevantContent(userQuery: string, matchThreshold: num
   } catch (error) {
     console.error('Error finding relevant content:', error);
     return { content: "Error retrieving content" };
+  }
+}
+
+// Function to find podcast episodes by summary similarity
+export async function findEpisodesBySummary(query: string, matchThreshold: number = 0.1, matchCount: number = 5) {
+  try {
+    // Generate embedding for the query
+    const queryEmbedding = await generateQueryEmbedding(query);
+    
+    // Calculate similarity using cosine distance against summary embeddings
+    const similarity = sql<number>`1 - (${cosineDistance(
+      resources.summaryEmbedding,
+      queryEmbedding,
+    )})`;
+    
+    // Find similar episodes using Drizzle ORM
+    const matches = await db
+      .select({ 
+        id: resources.id,
+        title: resources.title,
+        episodeNumber: resources.episodeNumber,
+        summary: resources.summary,
+        guests: resources.guests,
+        similarity 
+      })
+      .from(resources)
+      .where(gt(similarity, matchThreshold))
+      .orderBy(desc(similarity))
+      .limit(matchCount);
+    
+    if (!matches || matches.length === 0) {
+      return { episodes: [] };
+    }
+    
+    // Parse guests from JSON string
+    const episodesWithParsedGuests = matches.map(match => ({
+      ...match,
+      guests: match.guests ? JSON.parse(match.guests) : []
+    }));
+    
+    return { episodes: episodesWithParsedGuests };
+  } catch (error) {
+    console.error('Error finding episodes by summary:', error);
+    return { episodes: [], error: "Error retrieving episodes" };
   }
 } 

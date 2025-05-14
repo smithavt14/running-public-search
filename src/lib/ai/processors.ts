@@ -15,13 +15,18 @@ import {
   MAX_DURATION_SECONDS,
   MAX_SIZE_BYTES,
   MAX_SIZE_MB,
+  MAX_TRANSCRIPTION_WORKERS,
   OVERLAP_SIZE,
   TRANSCRIPTS_DIR,
+  SUMMARY_MODEL,
+  MAX_SUMMARY_TOKENS,
 } from "./config";
 import {
   PodcastEpisode,
 } from "./podcast-feed";
 import { eq, and } from "drizzle-orm";
+import { OpenAI } from "openai";
+import { createSummaryPrompt } from "../prompts/podcast-summarization";
 
 // Convert callback-based functions to Promise-based
 const exec = promisify(execCallback);
@@ -140,18 +145,7 @@ export async function splitAudioFile(filePath: string): Promise<string[]> {
 
     // Use ffmpeg to split the audio
     const ffmpegCmd = `ffmpeg -y -i "${filePath}" -ss ${startTime} -t ${chunkDuration} -reset_timestamps 1 -c copy "${outputPath}"`;
-
     await exec(ffmpegCmd);
-
-    // Verify the chunk size and duration
-    const chunkSize = await getFileSize(outputPath);
-    const chunkActualDuration = await getAudioDuration(outputPath);
-    console.log(
-      `Chunk ${i + 1} size: ${(chunkSize / (1024 * 1024)).toFixed(
-        2
-      )}MB, duration: ${chunkActualDuration.toFixed(2)}s`
-    );
-
     chunkPaths.push(outputPath);
   }
 
@@ -198,42 +192,67 @@ export async function createTranscripts(
 
     // Step 1: Split into chunks if needed
     const chunks = await splitAudioFile(episode.localFilePath);
-    console.log(`Split into ${chunks.length} chunk(s)`);
 
     // We'll store the transcripts directly in memory
     let allTranscriptText = "";
 
-    // Step 2: Transcribe each chunk and build complete transcript
-    for (const chunkPath of chunks) {
-      // Transcribe the audio chunk
-      const transcript = await transcribeAudio(chunkPath, {
-        temperature: 0.2,
-        responseFormat: "json",
+    // Step 2: Transcribe chunks in parallel with worker limits
+    console.log(`\nStarting parallel transcription with up to ${MAX_TRANSCRIPTION_WORKERS} workers`);
+    
+    // Process chunks in batches to limit concurrency
+    for (let i = 0; i < chunks.length; i += MAX_TRANSCRIPTION_WORKERS) {
+      const currentBatch = chunks.slice(i, i + MAX_TRANSCRIPTION_WORKERS);
+      console.log(`Processing batch of ${currentBatch.length} chunks (${i+1} to ${Math.min(i+MAX_TRANSCRIPTION_WORKERS, chunks.length)} of ${chunks.length})`);
+      
+      // Run transcriptions for current batch in parallel
+      const transcriptionPromises = currentBatch.map(async (chunkPath) => {
+        try {
+          // Transcribe the audio chunk
+          const transcript = await transcribeAudio(chunkPath, {
+            temperature: 0.2,
+            responseFormat: "json",
+          });
+
+          // Extract text from transcript JSON
+          try {
+            const parsedTranscript = JSON.parse(transcript);
+            let transcriptText: string;
+
+            if (typeof parsedTranscript === "string") {
+              transcriptText = parsedTranscript;
+            } else if (parsedTranscript.transcript) {
+              transcriptText = parsedTranscript.transcript;
+            } else if (parsedTranscript.text) {
+              transcriptText = parsedTranscript.text;
+            } else {
+              console.warn(
+                `Couldn't extract text from transcript for ${chunkPath}`
+              );
+              return { chunkPath, text: "" };
+            }
+
+            return { chunkPath, text: transcriptText };
+          } catch (error) {
+            console.error(`Error parsing transcript for ${chunkPath}:`, error);
+            return { chunkPath, text: "" };
+          }
+        } catch (error) {
+          console.error(`Error transcribing chunk ${chunkPath}:`, error);
+          return { chunkPath, text: "" };
+        }
       });
 
-      // Extract text from transcript JSON
-      try {
-        const parsedTranscript = JSON.parse(transcript);
-        let transcriptText: string;
-
-        if (typeof parsedTranscript === "string") {
-          transcriptText = parsedTranscript;
-        } else if (parsedTranscript.transcript) {
-          transcriptText = parsedTranscript.transcript;
-        } else if (parsedTranscript.text) {
-          transcriptText = parsedTranscript.text;
-        } else {
-          console.warn(
-            `Couldn't extract text from transcript for ${chunkPath}`
-          );
-          continue;
+      // Wait for all transcriptions in this batch to complete
+      const results = await Promise.all(transcriptionPromises);
+      
+      // Combine the results in order
+      for (const result of results) {
+        if (result.text) {
+          allTranscriptText += (allTranscriptText ? " " : "") + result.text;
         }
-
-        // Append to combined transcript
-        allTranscriptText += (allTranscriptText ? " " : "") + transcriptText;
-      } catch (error) {
-        console.error(`Error parsing transcript for ${chunkPath}:`, error);
       }
+      
+      console.log(`Completed batch of ${currentBatch.length} chunks`);
     }
 
     // Step 3: Save combined transcript only
@@ -280,9 +299,9 @@ export async function createResources(
           episodeNumber: episode.episodeNumber,
         });
 
-        console.log(`Added resource for: ${episode.title}`);
+        console.log(`Added resource for: e${episode.episodeNumber}`);
       } else {
-        console.log(`Resource already exists for: ${episode.title}`);
+        console.log(`Resource already exists for: e${episode.episodeNumber}`);
       }
     }
   }
@@ -409,4 +428,89 @@ export async function transcriptsExist(
     console.error(`Error checking for existing transcripts: ${error}`);
     return false;
   }
+}
+
+/**
+ * Generates summary and guest information for each episode using OpenAI API
+ * @param episodes Array of podcast episodes with transcripts
+ * @returns Array of episodes with added summary and guests information
+ */
+export async function generateSummaries(
+  episodes: PodcastEpisode[]
+): Promise<PodcastEpisode[]> {
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+  const embeddingModel = getEmbeddingModel();
+
+  for (const episode of episodes) {
+    if (!episode.transcriptPath) {
+      console.warn(
+        `No transcript path for episode: ${episode.episodeNumber}, skipping summary generation.`
+      );
+      continue;
+    }
+
+    console.log(`Generating summary for episode: ${episode.episodeNumber}`);
+
+    try {
+      // Read the transcript
+      const transcriptJson = await readFile(episode.transcriptPath, "utf-8");
+      const transcript = JSON.parse(transcriptJson).transcript;
+
+      // Create the prompt using our template
+      const prompt = createSummaryPrompt(
+        episode.title, 
+        transcript, 
+        MAX_SUMMARY_TOKENS
+      );
+
+      // Use OpenAI to generate summary and identify guests
+      const response = await openai.chat.completions.create({
+        model: SUMMARY_MODEL,
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful assistant that creates podcast summaries and identifies guests."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      // Safely handle null content
+      const content = response.choices[0].message.content || "{}";
+      const result = JSON.parse(content);
+      
+      // Update the episode with summary and guests
+      episode.summary = result.summary || "";
+      episode.guests = result.guests || [];
+
+      // Generate embedding for the summary
+      console.log(`Generating embedding for summary of episode ${episode.episodeNumber}`);
+      const { embeddings: summaryEmbeddings } = await embedMany({
+        model: embeddingModel,
+        values: [result.summary || ""],
+      });
+
+      // Update the database with summary, guests, and summary embedding
+      await db
+        .update(resources)
+        .set({
+          summary: result.summary || "",
+          guests: JSON.stringify(result.guests || []),
+          summaryEmbedding: summaryEmbeddings[0],
+        })
+        .where(eq(resources.guid, episode.guid));
+
+      console.log(`Successfully generated summary, guest information, and summary embedding for episode ${episode.episodeNumber}`);
+    } catch (error) {
+      console.error(`Error generating summary for episode ${episode.episodeNumber}:`, error);
+    }
+  }
+
+  return episodes;
 }

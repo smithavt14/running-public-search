@@ -1,0 +1,1 @@
+ALTER TABLE "resources" ADD COLUMN "summary_embedding" vector(1536);

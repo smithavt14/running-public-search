@@ -23,13 +23,17 @@ export interface PodcastEpisode {
   episodeNumber: string;
   localFilePath?: string;
   transcriptPath?: string;
+  summary?: string;
+  guests?: string[];
 }
 
 /**
  * Fetches and parses the podcast RSS feed
+ * @param maxEpisodes Maximum number of episodes to return (defaults to MAX_EPISODES from config)
+ * @param offset Number of episodes to skip (defaults to 0)
  * @returns Array of podcast episodes
  */
-export async function fetchPodcastFeed(): Promise<PodcastEpisode[]> {
+export async function fetchPodcastFeed(maxEpisodes = MAX_EPISODES, offset = 0): Promise<PodcastEpisode[]> {
   try {
     const response = await axios.get(PODCAST_FEED_URL);
     
@@ -58,17 +62,6 @@ export async function fetchPodcastFeed(): Promise<PodcastEpisode[]> {
       
       // Get episode number from itunes:episode tag if available
       let episodeNumber = item['itunes:episode'] || '';
-      
-      // If no episode number found, try to extract from title or link
-      if (!episodeNumber) {
-        const episodeMatch = item.title.match(/Episode (\d+)/) || 
-                            item.title.match(/^(\d+):/) ||
-                            item.link.match(/episode-(\d+)/);
-        
-        if (episodeMatch) {
-          episodeNumber = episodeMatch[1];
-        }
-      }
       
       // Extract enclosure URL for the audio file
       let enclosureUrl = '';
@@ -109,11 +102,11 @@ export async function fetchPodcastFeed(): Promise<PodcastEpisode[]> {
       };
     });
     
-    // Limit to MAX_EPISODES and sort by most recent
+    // Sort by most recent, apply offset and limit to maxEpisodes
     console.log(`Found ${episodes.length} episodes in the feed`);
     return episodes
       .sort((a: any, b: any) => b.pubDate.getTime() - a.pubDate.getTime())
-      .slice(0, MAX_EPISODES);
+      .slice(offset, offset + maxEpisodes);
   } catch (error) {
     console.error('Error fetching podcast feed:', error);
     throw error;

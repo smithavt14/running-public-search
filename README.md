@@ -61,6 +61,28 @@ pnpm dev
 - `pnpm process-audio-transcripts` - Process audio transcripts
 - `pnpm process-embeddings` - Generate and store embeddings for existing content
 
+### Podcast Processing
+
+The podcast processing script supports the following command-line parameters:
+
+- `--max <number>` - Maximum number of episodes to process (default: 10)
+- `--offset <number>` - Number of episodes to skip (default: 0)
+
+Examples:
+```bash
+# Process the first 10 episodes (default behavior)
+pnpm process-podcast
+
+# Process 5 episodes
+pnpm process-podcast --max 5
+
+# Process episodes 10-19 (skip the first 10)
+pnpm process-podcast --offset 10 --max 10
+
+# Process episodes 20-24 (skip the first 20, and process 5 episodes)
+pnpm process-podcast --offset 20 --max 5
+```
+
 ---
 
 ## Overview

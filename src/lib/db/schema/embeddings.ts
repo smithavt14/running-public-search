@@ -1,17 +1,6 @@
-import { customType, index, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { nanoid } from './resources';
+import { index, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { nanoid, pgVector } from './resources';
 import { resources } from './resources';
-
-// Define a custom vector type for pgvector
-const pgVector = customType<{ data: number[] }>({
-  dataType() {
-    return 'vector(1536)';
-  },
-  toDriver(value: number[]): string {
-    // Convert JavaScript array to PostgreSQL vector format
-    return JSON.stringify(value);
-  },
-});
 
 export const embeddings = pgTable(
   'embeddings',

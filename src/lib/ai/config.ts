@@ -1,8 +1,3 @@
-/**
- * AI configuration constants
- * Central place to configure chunking and other AI parameters
- */
-
 import { join } from "path";
 
 // Chunking parameters
@@ -13,9 +8,15 @@ export const OVERLAP_SIZE = 50;
 export const EMBEDDING_MODEL = 'text-embedding-3-small';
 export const TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 
+// AI model configuration
+export const SUMMARY_MODEL = 'gpt-4o';
+export const MAX_SUMMARY_TOKENS = 15000;
+
 // Podcast processing configuration
-export const MAX_EPISODES = 1; // Limiting to 10 episodes for quick testing
+export const MAX_EPISODES = 10; // Limiting to 10 episodes for quick testing
+export const EPISODES_OFFSET = 0; // Default offset for podcast episodes
 export const PODCAST_FEED_URL = 'https://feed.podbean.com/therunningpublic/feed.xml';
+export const MAX_TRANSCRIPTION_WORKERS = 10; // Maximum parallel workers for audio transcription
 
 // Audio File Constants
 export const AUDIO_FILES_DIR = join(process.cwd(), "data", "audio_files");

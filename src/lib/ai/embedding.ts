@@ -3,7 +3,7 @@ import { openai } from '@ai-sdk/openai';
 import { db } from '../db/index.js';
 import { embeddings } from '../db/schema/embeddings.js';
 import { resources } from '../db/schema/resources.js';
-import { cosineDistance, desc, gt, sql } from 'drizzle-orm';
+import { cosineDistance, desc, gt, sql, eq } from 'drizzle-orm';
 
 // Initialize embedding model
 const embeddingModel = openai.embedding('text-embedding-3-small');
@@ -59,15 +59,21 @@ export async function findRelevantContent(userQuery: string, matchThreshold: num
       queryEmbedding,
     )})`;
     
-    // Find similar content using Drizzle ORM
+    // Find similar content using Drizzle ORM with join to resources table
     const matches = await db
       .select({ 
         id: embeddings.id,
         content: embeddings.content,
         resourceId: embeddings.resourceId,
-        similarity 
+        similarity,
+        // Include resource information for citation
+        resourceTitle: resources.title,
+        episodeNumber: resources.episodeNumber,
+        guests: resources.guests,
+        link: resources.link
       })
       .from(embeddings)
+      .leftJoin(resources, eq(embeddings.resourceId, resources.id))
       .where(gt(similarity, matchThreshold))
       .orderBy(desc(similarity))
       .limit(matchCount);
@@ -76,7 +82,7 @@ export async function findRelevantContent(userQuery: string, matchThreshold: num
       return { content: "No relevant content found" };
     }
     
-    // Return the matches directly
+    // Return the matches with resource information
     return matches;
   } catch (error) {
     console.error('Error finding relevant content:', error);

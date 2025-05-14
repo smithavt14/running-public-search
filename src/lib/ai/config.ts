@@ -13,8 +13,8 @@ export const SUMMARY_MODEL = 'gpt-4o';
 export const MAX_SUMMARY_TOKENS = 15000;
 
 // Podcast processing configuration
-export const MAX_EPISODES = 10; // Limiting to 10 episodes for quick testing
-export const EPISODES_OFFSET = 0; // Default offset for podcast episodes
+export const MAX_EPISODES = 50; // Limiting to 10 episodes for quick testing
+export const EPISODES_OFFSET = 10; // Default offset for podcast episodes
 export const PODCAST_FEED_URL = 'https://feed.podbean.com/therunningpublic/feed.xml';
 export const MAX_TRANSCRIPTION_WORKERS = 10; // Maximum parallel workers for audio transcription
 

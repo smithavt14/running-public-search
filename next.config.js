@@ -22,6 +22,16 @@ const nextConfig = {
     
     return config;
   },
+  // Exclude audio files from deployment
+  output: 'standalone',
+  experimental: {
+    outputFileTracingExcludes: {
+      '*': [
+        'data/audio_files/**',
+        'data/audio_chunks/**',
+      ],
+    },
+  },
 };
 
 module.exports = nextConfig;

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useRef, useEffect } from "react";
+import Image from "next/image";
 
 export default function Home() {
   const { messages, input, handleInputChange, handleSubmit } = useChat({
@@ -25,21 +26,32 @@ export default function Home() {
     <main className="flex flex-col h-screen max-w-4xl w-full mx-auto py-10">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-black">The Running Public AI</h1>
+        <Image src="/logo.png" alt="The Running Public" width={80} height={80} priority />
         <ThemeToggle />
       </div>
 
+      {/* Welcome Message */}
+      {messages.length === 0 && (
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+          <h2 className="text-xl font-bold mb-2">Welcome to The Running Public Podcast AI Assistant</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto text-center">
+            Ask me anything about running advice, training techniques, gear recommendations, 
+            nutrition, race preparation, or specific episodes with Kirk DeWindt and Brakken Kraker. 
+            I can search for topics, list episodes, provide episode details, or tell you about podcast guests.
+          </p>
+        </div>
+      )}
+
       {/* Chat Messages Container */}
-      <div className="flex-1 overflow-auto p-4 my-6 shadow-sm scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div className={`overflow-auto p-4 scrollbar-hide ${messages.length > 0 ? "flex-1" : "hidden"}`} style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <div className="max-w-4xl mx-auto space-y-4">
           {messages.map((m: Message) => (
             <ChatBubble key={m.id} message={m}>
               {m.content.length > 0 ? 
                 m.content : 
                 <span className="italic font-light">
-                  {"calling tool: " +
-                    m.parts?.find((part) => part.type === "tool-invocation")
-                      ?.toolInvocation?.toolName || "unknown tool"}
+                  {m.parts?.find((part) => part.type === "tool-invocation")
+                    ?.toolInvocation?.toolName || "unknown tool"}
                 </span>
               }
             </ChatBubble>
@@ -55,7 +67,7 @@ export default function Home() {
             <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
             <Input
               className="w-full pl-10 pr-20 h-14"
-              placeholder="Ask about running..."
+              placeholder="Ask anything about the Running Public Podcast..."
               value={input}
               onChange={handleInputChange}
             />

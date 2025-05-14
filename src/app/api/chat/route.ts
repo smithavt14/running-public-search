@@ -3,7 +3,6 @@ import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 import { findRelevantContent } from '@/lib/ai/embedding.js';
 import { executeSafeQuery, getResourceStats } from '@/lib/ai/database-tools';
-import { analyzeEpisodeContent } from '@/lib/ai/database-explorer';
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompts/chat-system';
 
 // Allow streaming responses up to 30 seconds
@@ -18,12 +17,33 @@ export async function POST(req: Request) {
     messages,
     tools: {
       getRelevantContent: tool({
-        description: 'Retrieve relevant podcast content based on the user query',
+        description: 'Retrieve relevant podcast content based on the user query using semantic search and keyword matching',
         parameters: z.object({
-          query: z.string().describe('The user query to search for')
+          query: z.string().describe('The user query to search for'),
+          exactMatch: z.boolean().optional().describe('If true, will prioritize exact keyword matching')
         }),
-        execute: async ({ query }) => {
-          return await findRelevantContent(query);
+        execute: async ({ query, exactMatch = false }) => {
+          // If exact match is requested, use keyword search first
+          if (exactMatch) {
+            const keywordResults = await executeSafeQuery('search_embeddings', { keyword: query });
+            if (Array.isArray(keywordResults) && keywordResults.length > 0) {
+              return keywordResults;
+            }
+          }
+          
+          // Otherwise (or as fallback) use semantic search
+          const semanticResults = await findRelevantContent(query);
+          
+          // If we didn't find semantic results and haven't tried keyword search yet
+          if (typeof semanticResults === 'object' && 'content' in semanticResults && 
+              semanticResults.content === "No relevant content found" && !exactMatch) {
+            const keywordResults = await executeSafeQuery('search_embeddings', { keyword: query });
+            if (Array.isArray(keywordResults) && keywordResults.length > 0) {
+              return keywordResults;
+            }
+          }
+          
+          return semanticResults;
         }
       }),
       
@@ -43,27 +63,7 @@ export async function POST(req: Request) {
         execute: async ({ id }) => {
           return await executeSafeQuery('resource_details', { id });
         }
-      }),
-      
-      getEpisodeSummary: tool({
-        description: 'Get summary information about a specific episode by number',
-        parameters: z.object({
-          episodeNumber: z.string().describe('The episode number')
-        }),
-        execute: async ({ episodeNumber }) => {
-          return await executeSafeQuery('episode_summary', { episodeNumber });
-        }
-      }),
-      
-      searchEpisodeContent: tool({
-        description: 'Search for specific keywords in episode content',
-        parameters: z.object({
-          keyword: z.string().describe('The keyword to search for')
-        }),
-        execute: async ({ keyword }) => {
-          return await executeSafeQuery('search_embeddings', { keyword });
-        }
-      }),
+      }), 
       
       getPodcastStats: tool({
         description: 'Get statistics about the podcast episodes and content',
@@ -93,20 +93,6 @@ export async function POST(req: Request) {
           return await executeSafeQuery('episode_content', params);
         }
       }),
-      
-      analyzeEpisodeContent: tool({
-        description: 'Perform deep analysis of podcast content for specific topics or episodes',
-        parameters: z.object({
-          episodeNumber: z.string().optional().describe('Specific episode number to analyze'),
-          topicKeyword: z.string().optional().describe('Topic keyword to focus on'),
-          guestName: z.string().optional().describe('Filter by guest name'),
-          analysisType: z.enum(['training_plan', 'race_strategy', 'injury_advice', 'gear_review', 'general_topic'])
-            .describe('Type of analysis to perform')
-        }),
-        execute: async (params) => {
-          return await analyzeEpisodeContent(params);
-        }
-      })
     }
   });
 

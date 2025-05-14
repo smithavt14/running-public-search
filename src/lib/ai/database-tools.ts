@@ -8,7 +8,7 @@ import { embeddings } from '../db/schema/embeddings';
  * IMPORTANT: This should only be used with predetermined safe queries
  * to avoid SQL injection risks
  */
-export async function executeSafeQuery(queryType: 'list_resources' | 'resource_details' | 'episode_summary' | 'search_embeddings' | 'list_guests' | 'episode_content', params?: Record<string, any>) {
+export async function executeSafeQuery(queryType: 'list_resources' | 'resource_details' | 'search_embeddings' | 'list_guests' | 'episode_content', params?: Record<string, any>) {
   try {
     switch (queryType) {
       case 'list_resources':
@@ -33,24 +33,12 @@ export async function executeSafeQuery(queryType: 'list_resources' | 'resource_d
           .where(sql`${resources.id} = ${params.id}`)
           .limit(1);
       
-      case 'episode_summary':
-        // Get summary for a specific episode number
-        if (!params?.episodeNumber) throw new Error('Episode number is required');
-        return await db
-          .select({
-            id: resources.id,
-            title: resources.title,
-            summary: resources.summary,
-            guests: resources.guests
-          })
-          .from(resources)
-          .where(sql`${resources.episodeNumber} = ${params.episodeNumber}`)
-          .limit(1);
-      
       case 'search_embeddings':
         // Search for content across all episodes (limited to prevent abuse)
         if (!params?.keyword) throw new Error('Search keyword is required');
-        return await db
+        
+        // First get matching embeddings
+        const matchingEmbeddings = await db
           .select({
             id: embeddings.id,
             content: embeddings.content,
@@ -59,6 +47,36 @@ export async function executeSafeQuery(queryType: 'list_resources' | 'resource_d
           .from(embeddings)
           .where(sql`${embeddings.content} ILIKE ${'%' + params.keyword + '%'}`)
           .limit(10);
+        
+        // If no results, return early
+        if (!matchingEmbeddings.length) {
+          return [];
+        }
+        
+        // Get all the unique resource IDs
+        const resourceIds = [...new Set(matchingEmbeddings.map(e => e.resourceId))];
+        
+        // Get episode details for these resources
+        const matchingEpisodes = await db
+          .select({
+            id: resources.id,
+            title: resources.title,
+            episodeNumber: resources.episodeNumber
+          })
+          .from(resources)
+          .where(sql`${resources.id} IN (${resourceIds.filter(Boolean).join(',')})`);
+          
+        // Create a map of resource IDs to episode details
+        const episodeMap = new Map();
+        matchingEpisodes.forEach(episode => {
+          episodeMap.set(episode.id, episode);
+        });
+        
+        // Add episode context to each embedding result
+        return matchingEmbeddings.map(embed => ({
+          ...embed,
+          episode: episodeMap.get(embed.resourceId) || { title: 'Unknown', episodeNumber: 'Unknown' }
+        }));
           
       case 'list_guests':
         // Get all unique guests from the podcast

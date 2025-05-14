@@ -7,10 +7,21 @@ import { Moon, Sun } from "lucide-react";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+  
+  // Only execute after component mounts to avoid hydration mismatch
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
+
+  // Don't render the toggle until after mounting to prevent flash of incorrect theme
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="flex items-center space-x-2">

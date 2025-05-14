@@ -5,10 +5,11 @@ import { useChat } from "@ai-sdk/react";
 import { ChatBubble } from "@/components/chat-bubble";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Heart } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useRef, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   const { messages, input, handleInputChange, handleSubmit } = useChat({
@@ -74,6 +75,16 @@ export default function Home() {
           </div>
           <Button type="submit" className="hidden">Submit</Button>
         </form>
+      </div>
+      
+      {/* Footer */}
+      <div className="flex justify-between items-center text-sm text-muted-foreground mt-2 mb-4 px-4">
+        <div>
+          Made with <Heart className="inline h-4 w-4 text-gray-500 mx-1" /> by <Link href="https://alex.cn.com" target="_blank" className="hover:underline">Alex Smith</Link>
+        </div>
+        <div>
+          © {new Date().getFullYear()} The Running Public Search
+        </div>
       </div>
     </main>
   );

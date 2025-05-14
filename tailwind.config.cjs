@@ -9,14 +9,14 @@ module.exports = {
   theme: {
   	extend: {
   		fontFamily: {
-  			title: [
-  				'Helvetica Neue Condensed Bold"',
-  				'Arial',
+  			sans: [
+  				'var(--font-noto-sans)',
+  				'system-ui',
   				'sans-serif'
   			],
-  			body: [
-  				'Roboto',
-  				'Arial',
+  			heading: [
+  				'var(--font-montserrat)',
+  				'system-ui',
   				'sans-serif'
   			]
   		},

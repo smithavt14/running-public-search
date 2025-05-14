@@ -9,7 +9,7 @@ export const EMBEDDING_MODEL = 'text-embedding-3-small';
 export const TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 
 // AI model configuration
-export const SUMMARY_MODEL = 'gpt-4o';
+export const SUMMARY_MODEL = 'gpt-4o-mini';
 export const MAX_SUMMARY_TOKENS = 15000;
 
 // Podcast processing configuration

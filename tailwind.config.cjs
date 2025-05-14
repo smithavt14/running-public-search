@@ -20,6 +20,9 @@ module.exports = {
   				'sans-serif'
   			]
   		},
+  		animation: {
+  			"spin-slow": "spin 2s linear infinite",
+  		},
   		colors: {
   			background: 'var(--background)',
   			foreground: 'var(--foreground)',

@@ -11,6 +11,7 @@ import { useRef, useEffect, FormEvent, ChangeEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { InitialQuerySuggestions } from "@/components/initial-query-suggestions";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function Home() {
   const { messages, input, handleInputChange, handleSubmit } = useChat({
@@ -51,7 +52,7 @@ export default function Home() {
     <main className="flex flex-col h-screen max-w-4xl w-full mx-auto py-10">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <Image src="/logo.png" alt="The Running Public" width={80} height={80} priority />
+        <Image src="/logo.png" alt="The Running Public" width={64} height={64} priority />
         <ThemeToggle />
       </div>
 
@@ -81,9 +82,9 @@ export default function Home() {
             <ChatBubble key={m.id} message={m}>
               {m.content.length > 0 ? 
                 m.content : 
-                <span className="italic font-light">
-                  {m.parts?.find((part) => part.type === "tool-invocation")
-                    ?.toolInvocation?.toolName || "unknown tool"}
+                <span className="flex items-center gap-2 animate-pulse">
+                  <Spinner size="sm" />
+                  <span className="italic font-light">Thinking...</span>
                 </span>
               }
             </ChatBubble>

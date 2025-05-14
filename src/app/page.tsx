@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Heart } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, FormEvent, ChangeEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { InitialQuerySuggestions } from "@/components/initial-query-suggestions";
 
 export default function Home() {
   const { messages, input, handleInputChange, handleSubmit } = useChat({
@@ -23,6 +24,29 @@ export default function Home() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Custom handler for input changes that can handle both string and event inputs
+  const handleInputWrapper = (
+    e: string | ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    if (typeof e === 'string') {
+      // Create a synthetic event if we get a string
+      const syntheticEvent = {
+        target: { value: e },
+        currentTarget: { value: e },
+      } as ChangeEvent<HTMLInputElement>;
+      handleInputChange(syntheticEvent);
+    } else {
+      // Pass through the event if it's already an event
+      handleInputChange(e);
+    }
+  };
+
+  // Custom submit wrapper for initial query suggestions
+  const handleSuggestionSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    handleSubmit(e);
+  };
+
   return (
     <main className="flex flex-col h-screen max-w-4xl w-full mx-auto py-10">
       {/* Header */}
@@ -31,15 +55,22 @@ export default function Home() {
         <ThemeToggle />
       </div>
 
-      {/* Welcome Message */}
+      {/* Welcome Message & Query Suggestions */}
       {messages.length === 0 && (
-        <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-          <h2 className="text-xl font-bold mb-2">Welcome to The Running Public Podcast AI Assistant</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-center">
-            Ask me anything about running advice, training techniques, gear recommendations, 
-            nutrition, race preparation, or specific episodes with Kirk DeWindt and Brakken Kraker. 
-            I can search for topics, list episodes, provide episode details, or tell you about podcast guests.
-          </p>
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <div className="max-w-3xl w-full px-4 py-8">
+            <h2 className="text-xl font-bold mb-2">Welcome to The Running Public Podcast AI Assistant</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
+              Ask me anything about running advice, training techniques, gear recommendations, 
+              nutrition, race preparation, or specific episodes with Kirk DeWindt and Brakken Kraker. 
+              I can search for topics, list episodes, provide episode details, or tell you about podcast guests.
+            </p>
+            
+            <InitialQuerySuggestions 
+              setInput={handleInputWrapper} 
+              handleSubmit={handleSuggestionSubmit} 
+            />
+          </div>
         </div>
       )}
 

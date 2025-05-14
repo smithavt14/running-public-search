@@ -506,7 +506,7 @@ export async function generateSummaries(
         })
         .where(eq(resources.guid, episode.guid));
 
-      console.log(`Successfully generated summary, guest information, and summary embedding for episode ${episode.episodeNumber}`);
+      console.log(`Successfully updated DB with summary, guest information, and summary embedding for episode ${episode.episodeNumber}`);
     } catch (error) {
       console.error(`Error generating summary for episode ${episode.episodeNumber}:`, error);
     }
